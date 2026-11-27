@@ -78,5 +78,19 @@ Responses: `{ success, ... }`; errors: `{ success:false, message, errors? }` wit
 
 Postman: import `backend/postman/CampusVoice.postman_collection.json`, run a **Login** request first (token is stored automatically). ER diagram: `docs/ER_DIAGRAM.md`.
 
-## Deployment (suggested)
-Backend → Render/Railway (set env vars, `CLIENT_URL` = frontend URL) with MongoDB Atlas; Frontend → Vercel/Netlify (`VITE_API_URL` = backend URL, build `npm run build`, output `dist`).
+## Deployment
+
+### Backend on Render
+
+1. Create a MongoDB Atlas database and allow connections from Render (or use an appropriately restricted IP allowlist).
+2. In Render, create a Blueprint from this repository and use the included `render.yaml`. The service uses `backend` as its root directory, `npm ci` to build, `npm start` to run, and `/api/health` for health checks.
+3. Set `MONGO_URI` to the Atlas connection string and `CLIENT_URL` to the exact Vercel frontend origin (for example, `https://your-project.vercel.app`, with no trailing slash). If the Vercel URL is not available yet, set `CLIENT_URL` after deploying the frontend and redeploy the Render service.
+4. Render generates `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`. `PORT` is supplied by Render; do not set it manually.
+
+### Frontend on Vercel
+
+1. Import the same repository into Vercel and set the project **Root Directory** to `frontend`.
+2. Use the Vite defaults (`npm run build`, output directory `dist`) and set `VITE_API_URL` to the Render API origin (for example, `https://your-api.onrender.com`, with no trailing slash). This is a build-time variable.
+3. The included `frontend/vercel.json` routes client-side React Router URLs back to the app entry point.
+
+The backend's `CLIENT_URL` must match the deployed frontend origin exactly for API and Socket.IO connections. Do not commit deployment secrets or `.env` files; use the hosting providers' environment-variable settings. To create demo data, run `npm run seed` from `backend` against the configured database; **this clears existing data**.
